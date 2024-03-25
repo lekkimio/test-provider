@@ -1,0 +1,47 @@
+services:
+  keycloak_demo:
+    image: quay.io/keycloak/keycloak:24.0.1
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres_keycloak_demo
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_PASSWORD: password
+      KC_DB_USERNAME: keycloak
+      KC_DB_SCHEMA: public
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres_keycloak_demo:
+        condition: service_healthy
+    networks:
+      - keycloak_demo_dev_network
+    volumes:
+      - ./certs:/opt/keycloak/demo/certs
+      - ./target/provider-1.0-SNAPSHOT.jar:/opt/keycloak/providers/provider-1.0-SNAPSHOT.jar
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  postgres_keycloak_demo:
+    image: postgres:14.2
+    command: postgres -c 'max_connections=200'
+    volumes:
+      - pgdata_keycloak_demo:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: "exit 0"
+    ports:
+      - "5436:5432"
+    networks:
+      - keycloak_demo_dev_network
+
+networks:
+  keycloak_demo_dev_network:
+
+volumes:
+  pgdata_keycloak_demo:
